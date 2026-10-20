@@ -1,0 +1,164 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance Dashboard</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+</head>
+
+<body class="bg-emerald-50 min-h-screen p-6 relative overflow-x-hidden">
+
+    <!-- Header -->
+    <header class="flex items-center justify-between mb-10">
+        <div class="flex items-center space-x-3">
+            <img src="{% static 'images/logo.png' %}" alt="Logo" class="h-10 w-10">
+            <h1 class="text-3xl font-extrabold text-emerald-800 tracking-tight">My Finance Dashboard</h1>
+        </div>
+        <a href="{% url 'add_transaction' %}"
+           class="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-200">
+           + Add Transaction
+        </a>
+    </header>
+
+    <!-- Summary Cards -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        <div class="bg-white p-6 rounded-2xl shadow-lg border-t-4 border-emerald-500 hover:scale-105 transition">
+            <h2 class="text-gray-500 font-medium">Total Income</h2>
+            <p class="text-3xl font-bold text-emerald-600 mt-2">${{ monthly_income }}</p>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-lg border-t-4 border-red-500 hover:scale-105 transition">
+            <h2 class="text-gray-500 font-medium">Total Expenses</h2>
+            <p class="text-3xl font-bold text-red-600 mt-2">${{ monthly_expenses }}</p>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-lg border-t-4 border-emerald-700 hover:scale-105 transition">
+            <h2 class="text-gray-500 font-medium">Current Balance</h2>
+            <p class="text-3xl font-bold text-emerald-800 mt-2">${{ balance }}</p>
+        </div>
+    </section>
+
+<!-- Chart Section -->
+<section class="bg-white p-6 rounded-2xl shadow-lg mb-10 flex flex-col items-center">
+    <h2 class="text-2xl font-bold text-emerald-700 mb-4">Income vs Expenses</h2>
+    <div class="relative w-64 h-64"> <!-- Adjust size here -->
+        <canvas id="financeChart"></canvas>
+    </div>
+</section>
+
+<!-- Pass Django data to JS -->
+<script>
+    const monthlyIncome = parseFloat("{{ monthly_income|default:0 }}");
+    const monthlyExpenses = parseFloat("{{ monthly_expenses|default:0 }}");
+</script>
+
+<!-- Chart Drawing Script -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const ctx = document.getElementById('financeChart');
+    if (!ctx) return;
+
+    const income = isNaN(monthlyIncome) ? 0 : monthlyIncome;
+    const expenses = isNaN(monthlyExpenses) ? 0 : monthlyExpenses;
+
+    if (income === 0 && expenses === 0) {
+        ctx.parentElement.innerHTML += '<p class="text-center text-gray-500 mt-4">No data to display yet.</p>';
+        return;
+    }
+
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Income', 'Expenses'],
+            datasets: [{
+                data: [income, expenses],
+                backgroundColor: ['#10b981', '#ef4444'],
+                borderWidth: 2,
+                hoverOffset: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '70%', /* inner hole size */
+            plugins: {
+                legend: { position: 'bottom' },
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            return `${context.label}: $${context.parsed}`;
+                        }
+                    }
+                }
+            }
+        },
+        plugins: [{
+            id: 'centerText',
+            beforeDraw(chart) {
+                const { width, height, ctx } = chart;
+                ctx.save();
+                ctx.font = 'bold 16px Inter';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = '#065f46';
+                ctx.fillText(`$${(income - expenses).toFixed(2)}`, width / 2, height / 2);
+            }
+        }]
+    });
+});
+</script>
+<!-- Recent Transactions Table -->
+    <section class="bg-white rounded-2xl shadow-lg overflow-hidden">
+        <h2 class="text-2xl font-bold text-emerald-700 p-6 border-b">Recent Transactions</h2>
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-emerald-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-emerald-700 uppercase">Date</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-emerald-700 uppercase">Type</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-emerald-700 uppercase">Category</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-emerald-700 uppercase">Amount</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-emerald-700 uppercase">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for t in transactions %}
+                <tr class="hover:bg-emerald-50 transition duration-150">
+                    <td class="px-6 py-4 text-gray-700">{{ t.date|date:"M d, Y" }}</td>
+                    <td class="px-6 py-4">
+                        {% if t.transaction_type == 'EXPENSE' %}
+                        <span class="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-semibold">Expense</span>
+                        {% else %}
+                        <span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full text-xs font-semibold">Income</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 text-gray-700">{{ t.category }}</td>
+                    <td class="px-6 py-4 text-gray-800 font-semibold">
+                        {% if t.transaction_type == 'EXPENSE' %}
+                        -${{ t.amount }}
+                        {% else %}
+                        +${{ t.amount }}
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4">
+                        <a href="{% url 'edit_transaction' t.id %}" class="text-emerald-600 hover:underline">Edit</a> |
+                        <a href="{% url 'delete_transaction' t.id %}" class="text-red-600 hover:underline">Delete</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="text-center py-6 text-gray-500">No transactions yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+</body>
+</html>
+

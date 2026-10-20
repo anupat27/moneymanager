@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Transaction</title>
+    <!-- Load Inter font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles to target elements rendered by {{ form.as_p }} */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Style the paragraphs/labels rendered by form.as_p */
+        .form-card p {
+            margin-bottom: 1rem;
+        }
+
+        /* Style the inputs and select elements */
+        .form-card input[type="text"],
+        .form-card input[type="number"],
+        .form-card input[type="date"],
+        .form-card select,
+        .form-card textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 0.5rem; /* rounded-lg */
+            border: 1px solid #d1d5db; /* gray-300 */
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+
+        /* Focus state */
+        .form-card input:focus,
+        .form-card select:focus,
+        .form-card textarea:focus {
+            border-color: #10b981; /* emerald-500 */
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.4); /* soft emerald shadow */
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'emerald': {
+                            50: '#f0fdf4',
+                            100: '#dcffe6',
+                            200: '#c0f7d5',
+                            300: '#94ecba',
+                            400: '#5ad996',
+                            500: '#10b981', /* Primary Green */
+                            600: '#0ea478',
+                            700: '#0d8564',
+                            800: '#0e674e',
+                            900: '#0d533f',
+                            950: '#063026',
+                        },
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-emerald-50 min-h-screen flex items-center justify-center p-4">
+
+    <!-- Edit Transaction Form Card -->
+    <div class="form-card bg-white p-8 md:p-10 rounded-xl shadow-2xl w-full max-w-lg">
+
+        <h1 class="text-3xl font-bold text-emerald-800 mb-6 border-b pb-3 border-emerald-100">
+            <span class="inline-block mr-2 text-emerald-500">✍️</span>
+            Edit Transaction
+        </h1>
+
+        <form action="{% url 'edit_transaction' transaction_id %}" method="post">
+            {% csrf_token %}
+            
+            <!-- Django Form Fields -->
+            <div class="space-y-4">
+                {{ form.as_p }}
+            </div>
+            
+            <button type="submit" 
+                    class="mt-8 w-full bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-3 px-4 rounded-lg 
+                           transition duration-200 ease-in-out shadow-md hover:shadow-lg focus:outline-none focus:ring-4 
+                           focus:ring-emerald-200">
+                Save Changes
+            </button>
+        </form>
+
+        <div class="text-center mt-6">
+            <a href="{% url 'dashboard' %}" 
+               class="text-gray-500 hover:text-red-600 text-sm font-medium transition duration-200">
+                Cancel
+            </a>
+        </div>
+    </div>
+
+</body>
+</html>
